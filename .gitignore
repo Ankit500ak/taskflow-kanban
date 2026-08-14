@@ -1,0 +1,15 @@
+# Production
+node_modules/
+npm-debug.log
+taskflow.db
+*.log
+.DS_Store
+
+# Frontend build artifacts
+frontend/dist/
+frontend/node_modules/
+
+# Environment
+.env
+.env.local
+.env.production
