@@ -73,8 +73,8 @@ export function Auth({ onLogin }: AuthProps) {
     }
   };
 
-  return (
-    <div className="auth-page">
+return (
+    <div className="auth-page" style={{ background: '#fafafa', minHeight: '100vh' }}>
       <div className="auth-left">
         <div className="auth-brand">
           <div className="auth-logo">
@@ -181,57 +181,6 @@ export function Auth({ onLogin }: AuthProps) {
             </svg>
             Continue as Guest
           </button>
-        </div>
-
-        <p className="auth-footer">
-          By continuing, you agree to our{' '}
-          <a href="#" className="auth-link">Terms of Service</a> and{' '}
-          <a href="#" className="auth-link">Privacy Policy</a>.
-        </p>
-      </div>
-
-      <div className="auth-right">
-        <div className="auth-illustration">
-          <div className="auth-illust-card auth-illust-1">
-            <div className="auth-illust-icon" style={{ background: '#6366f1' }}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="3" width="7" height="7" rx="1" />
-                <rect x="14" y="3" width="7" height="7" rx="1" />
-                <rect x="3" y="14" width="7" height="7" rx="1" />
-                <rect x="14" y="14" width="7" height="7" rx="1" />
-              </svg>
-            </div>
-            <div>
-              <div className="auth-illust-title">Kanban Board</div>
-              <div className="auth-illust-desc">Drag & drop tasks</div>
-            </div>
-          </div>
-          <div className="auth-illust-card auth-illust-2">
-            <div className="auth-illust-icon" style={{ background: '#22c55e' }}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                <polyline points="22 4 12 14.01 9 11.01" />
-              </svg>
-            </div>
-            <div>
-              <div className="auth-illust-title">Task Tracking</div>
-              <div className="auth-illust-desc">Stay organized</div>
-            </div>
-          </div>
-          <div className="auth-illust-card auth-illust-3">
-            <div className="auth-illust-icon" style={{ background: '#f59e0b' }}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                <circle cx="9" cy="7" r="4" />
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-              </svg>
-            </div>
-            <div>
-              <div className="auth-illust-title">Team Collaboration</div>
-              <div className="auth-illust-desc">Work together</div>
-            </div>
-          </div>
         </div>
       </div>
     </div>
