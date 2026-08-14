@@ -12,10 +12,13 @@ const PORT = process.env.PORT || 3001;
 // Middleware
 const origin = process.env.CORS_ORIGIN || '*';
 
+console.log('CORS Origin:', origin);
+
 app.use(cors({
   origin,
   credentials: true
 }));
+console.log('CORS middleware applied');
 app.use(express.json());
 
 // Initialize database
@@ -50,6 +53,8 @@ app.use((err, req, res, next) => {
 if (process.env.NODE_ENV !== 'test') {
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
+    console.log(`Environment: ${process.env.NODE_ENV}`);
+    console.log(`CORS Origin: ${process.env.CORS_ORIGIN || '*'}`);
   });
 }
 
