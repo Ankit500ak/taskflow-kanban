@@ -1,6 +1,6 @@
 import { Board, Task, CreateTaskInput, UpdateTaskInput, ColumnStats, AuthUser, Project, CreateProjectInput, UpdateProjectInput, ProjectTask, CreateProjectTaskInput, UpdateProjectTaskInput } from './types';
 
-const API_BASE = 'https://taskflow-kanban-trcl.onrender.com';
+const API_BASE = 'https://taskflow-kanban-trcl.onrender.com/api';
 
 export function getToken() {
   return localStorage.getItem('taskflow_token');
