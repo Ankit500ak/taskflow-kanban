@@ -17,47 +17,62 @@ export function clearToken() {
 async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
   const token = getToken();
   const fullUrl = API_BASE + url;
-  console.log('Fetching full URL:', fullUrl);
-
-  const response = await fetch(fullUrl, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...options?.headers,
-    },
-  });
-
-  // Show detailed error information
-  if (!response.ok) {
-    const errorText = await response.text().catch(() => 'Unable to read response');
-    // Provide specific error messages based on status code
-    let errorMsg;
-    switch (response.status) {
-      case 0:
-        errorMsg = 'Network error - unable to connect to server. The backend may be down or CORS is blocking the request.';
-        break;
-      case 400:
-        errorMsg = 'Bad request - invalid data sent to server. Check form inputs.';
-        break;
-      case 401:
-        errorMsg = 'Unauthorized - invalid login credentials or expired token.';
-        break;
-      case 409:
-        errorMsg = 'Conflict - account with this email already exists.';
-        break;
-      case 500:
-        errorMsg = 'Server error - something went wrong on the backend.';
-        break;
-      default:
-        errorMsg = response.statusText || 'Request failed';
-    }
-    throw new Error(`${response.status} ${errorMsg}: ${errorText.substring(0, 200)}`);
+  
+  // Debug: Log the full URL being fetched
+  if (typeof window !== 'undefined') {
+    console.log('API Request:', fullUrl);
+    console.log('Auth token present:', !!token);
   }
 
-  // Log successful response (truncated)
-  console.log('Response OK, data size:', response.body ? 'present' : 'empty');
-  return response.json();
+  try {
+    const response = await fetch(fullUrl, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...options?.headers,
+      },
+    });
+
+    // Detailed error reporting
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => 'Unable to read response');
+      let errorMsg;
+      switch (response.status) {
+        case 0:
+          errorMsg = 'NETWORK_ERROR: Unable to connect to server. Check if backend is running and CORS is configured. Full URL: ' + fullUrl;
+          break;
+        case 400:
+          errorMsg = 'BAD_REQUEST: Invalid request data. Check form inputs.';
+          break;
+        case 401:
+          errorMsg = 'UNAUTHORIZED: Invalid credentials or expired token.';
+          break;
+        case 409:
+          errorMsg = 'CONFLICT: Account with this email already exists.';
+          break;
+        case 500:
+          errorMsg = 'SERVER_ERROR: Something went wrong on the backend.';
+          break;
+        default:
+          errorMsg = 'HTTP ' + response.status + ' ' + (response.statusText || '');
+      }
+      throw new Error(errorMsg + ' | Response: ' + errorText.substring(0, 150));
+    }
+
+    // Log successful response
+    if (typeof window !== 'undefined') {
+      console.log('API Success:', fullUrl);
+    }
+    return response.json();
+  } catch (error: any) {
+    // Comprehensive error handling
+    if (typeof window !== 'undefined') {
+      console.error('API Fetch Error:', error.message);
+      console.error('Full URL:', API_BASE + url);
+    }
+    throw error;
+  }
 }
 
 export const api = {
