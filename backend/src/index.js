@@ -12,12 +12,18 @@ const PORT = process.env.PORT || 3001;
 // Middleware
 const origin = process.env.CORS_ORIGIN || '*';
 
-console.log('CORS Origin:', origin);
+console.log('--- CORS Configuration ---');
+console.log('Requested Origin:', origin);
+console.log('CORS_ORIGIN env:', process.env.CORS_ORIGIN);
+console.log('Using origin:', origin === '*' ? 'ALL origins (default)' : 'Specific origin');
+console.log('--- End CORS Configuration ---');
 
 app.use(cors({
   origin,
   credentials: true
 }));
+
+console.log('CORS middleware active - origins allowed:', origin === '*' ? '*' : origin);
 console.log('CORS middleware applied');
 app.use(express.json());
 

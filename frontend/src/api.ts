@@ -25,9 +25,13 @@ async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
     },
   });
 
+  // Show detailed error information
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'Network error' }));
-    throw new Error(error.error || `HTTP error ${response.status}`);
+    const errorText = await response.text().catch(() => 'Unable to read response');
+    const errorMsg = response.status === 0
+      ? 'Network error - unable to connect to server. Check CORS configuration and backend status.'
+      : response.statusText || 'Request failed';
+    throw new Error(`${response.status} ${errorMsg}: ${errorText.substring(0, 200)}`);
   }
 
   return response.json();
