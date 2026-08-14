@@ -16,7 +16,10 @@ export function clearToken() {
 
 async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
   const token = getToken();
-  const fullUrl = API_BASE + url;
+  
+  // Check if url is already a full URL or just a path
+  const isFullUrl = url.startsWith('http://') || url.startsWith('https://');
+  const fullUrl = isFullUrl ? url : API_BASE + url;
   
   // Debug: Log the full URL being fetched
   if (typeof window !== 'undefined') {
@@ -69,7 +72,7 @@ async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
     // Comprehensive error handling
     if (typeof window !== 'undefined') {
       console.error('API Fetch Error:', error.message);
-      console.error('Full URL:', API_BASE + url);
+      console.error('Full URL:', isFullUrl ? url : API_BASE + url);
     }
     throw error;
   }
