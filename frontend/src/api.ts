@@ -16,7 +16,10 @@ export function clearToken() {
 
 async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
   const token = getToken();
-  const response = await fetch(url, {
+  const fullUrl = API_BASE + url;
+  console.log('Fetching full URL:', fullUrl);
+
+  const response = await fetch(fullUrl, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -28,12 +31,32 @@ async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
   // Show detailed error information
   if (!response.ok) {
     const errorText = await response.text().catch(() => 'Unable to read response');
-    const errorMsg = response.status === 0
-      ? 'Network error - unable to connect to server. Check CORS configuration and backend status.'
-      : response.statusText || 'Request failed';
+    // Provide specific error messages based on status code
+    let errorMsg;
+    switch (response.status) {
+      case 0:
+        errorMsg = 'Network error - unable to connect to server. The backend may be down or CORS is blocking the request.';
+        break;
+      case 400:
+        errorMsg = 'Bad request - invalid data sent to server. Check form inputs.';
+        break;
+      case 401:
+        errorMsg = 'Unauthorized - invalid login credentials or expired token.';
+        break;
+      case 409:
+        errorMsg = 'Conflict - account with this email already exists.';
+        break;
+      case 500:
+        errorMsg = 'Server error - something went wrong on the backend.';
+        break;
+      default:
+        errorMsg = response.statusText || 'Request failed';
+    }
     throw new Error(`${response.status} ${errorMsg}: ${errorText.substring(0, 200)}`);
   }
 
+  // Log successful response (truncated)
+  console.log('Response OK, data size:', response.body ? 'present' : 'empty');
   return response.json();
 }
 
