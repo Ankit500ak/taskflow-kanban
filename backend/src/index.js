@@ -10,17 +10,10 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // Middleware
-const allowedOrigins = process.env.CORS_ORIGIN 
-  ? [process.env.CORS_ORIGIN, 'http://localhost:3001']
-  : ['http://localhost:3001'];
+const origin = process.env.CORS_ORIGIN || '*';
 
 app.use(cors({
-  origin: function (origin, cb) {
-    // allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return cb(null, true);
-    if (allowedOrigins.indexOf(origin) !== -1) return cb(null, true);
-    cb(new Error('Not allowed by CORS'));
-  },
+  origin,
   credentials: true
 }));
 app.use(express.json());
