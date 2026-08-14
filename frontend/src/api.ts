@@ -1,6 +1,8 @@
 import { Board, Task, CreateTaskInput, UpdateTaskInput, ColumnStats, AuthUser, Project, CreateProjectInput, UpdateProjectInput, ProjectTask, CreateProjectTaskInput, UpdateProjectTaskInput } from './types';
 
-const API_BASE = 'http://localhost:3001/api';
+const API_BASE = import.meta.env.VITE_API_BASE 
+  ? import.meta.env.VITE_API_BASE 
+  : 'https://taskflow-kanban-trcl.onrender.com';
 
 export function getToken() {
   return localStorage.getItem('taskflow_token');

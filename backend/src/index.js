@@ -10,7 +10,19 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // Middleware
-app.use(cors());
+const allowedOrigins = process.env.CORS_ORIGIN 
+  ? [process.env.CORS_ORIGIN, 'http://localhost:3001']
+  : ['http://localhost:3001'];
+
+app.use(cors({
+  origin: function (origin, cb) {
+    // allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return cb(null, true);
+    if (allowedOrigins.indexOf(origin) !== -1) return cb(null, true);
+    cb(new Error('Not allowed by CORS'));
+  },
+  credentials: true
+}));
 app.use(express.json());
 
 // Initialize database
