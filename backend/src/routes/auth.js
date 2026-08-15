@@ -6,6 +6,7 @@ const { signToken } = require('../middleware/auth');
 
 const sanitizeString = (str) => (typeof str === 'string' ? str.trim() : '');
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const MAX_NAME_LENGTH = 100;
 
 // POST /api/auth/register - Create a new user
 router.post('/register', (req, res) => {
@@ -19,6 +20,9 @@ router.post('/register', (req, res) => {
     // Validation
     if (!cleanName) {
       return res.status(400).json({ error: 'Name is required' });
+    }
+    if (cleanName.length > MAX_NAME_LENGTH) {
+      return res.status(400).json({ error: `Name must be at most ${MAX_NAME_LENGTH} characters` });
     }
     if (!cleanEmail || !EMAIL_REGEX.test(cleanEmail)) {
       return res.status(400).json({ error: 'A valid email is required' });

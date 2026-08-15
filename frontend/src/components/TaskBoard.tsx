@@ -3,6 +3,7 @@ import { Column as ColumnType, Task, Project } from '../types';
 import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
 import { TaskHeader } from './TaskHeader';
+import { TaskStats } from './TaskStats';
 import { Column } from './Column';
 import { ListView } from './ListView';
 import { ProjectsListView } from './ProjectsListView';
@@ -250,6 +251,8 @@ export function TaskBoard({ userName, onLogout }: TaskBoardProps) {
                   fields={fields}
                   onToggleField={toggleField}
                 />
+
+                <TaskStats tasks={filteredTasks} columns={board!.columns} />
 
                 {viewMode === 'list' ? (
                   <ListView

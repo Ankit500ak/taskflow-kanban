@@ -126,9 +126,19 @@ export function ProjectsListView({ projects, onRefresh, onOpen, userName }: Proj
 
   const userInitials = userName.split(' ').map((p) => p[0]).slice(0, 2).join('').toUpperCase();
 
+  // Stats
+  const totalProjects = projects.length;
+  const highPriority = projects.filter((p) => p.priority === 'High').length;
+  const dueSoon = projects.filter((p) => {
+    if (!p.due_date) return false;
+    const diff = new Date(p.due_date).getTime() - Date.now();
+    return diff > 0 && diff < 7 * 24 * 60 * 60 * 1000;
+  }).length;
+  const totalTasks = projects.reduce((acc, p) => acc + (p.task_count || 0), 0);
+
   return (
     <div className="list-view">
-      {/* Header - same as Tasks */}
+      {/* Header */}
       <div className="tasks-header">
         <h1 className="page-title">Projects</h1>
         <div className="tasks-header-actions">
@@ -187,7 +197,65 @@ export function ProjectsListView({ projects, onRefresh, onOpen, userName }: Proj
         </div>
       </div>
 
-      {viewMode === 'list' ? (
+      {/* Stats Bar */}
+      {projects.length > 0 && (
+        <div className="project-stats-bar">
+          <div className="project-stat">
+            <div className="project-stat-icon project-stat-total">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" /></svg>
+            </div>
+            <div className="project-stat-info">
+              <span className="project-stat-value">{totalProjects}</span>
+              <span className="project-stat-label">Projects</span>
+            </div>
+          </div>
+          <div className="project-stat">
+            <div className="project-stat-icon project-stat-high">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>
+            </div>
+            <div className="project-stat-info">
+              <span className="project-stat-value">{highPriority}</span>
+              <span className="project-stat-label">High Priority</span>
+            </div>
+          </div>
+          <div className="project-stat">
+            <div className="project-stat-icon project-stat-due">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
+            </div>
+            <div className="project-stat-info">
+              <span className="project-stat-value">{dueSoon}</span>
+              <span className="project-stat-label">Due Soon</span>
+            </div>
+          </div>
+          <div className="project-stat">
+            <div className="project-stat-icon project-stat-tasks">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 11 12 14 22 4" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" /></svg>
+            </div>
+            <div className="project-stat-info">
+              <span className="project-stat-value">{totalTasks}</span>
+              <span className="project-stat-label">Total Tasks</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {projects.length === 0 && !quickAddOpen ? (
+        <div className="project-empty-state">
+          <div className="project-empty-icon">
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+              <line x1="12" y1="11" x2="12" y2="17" />
+              <line x1="9" y1="14" x2="15" y2="14" />
+            </svg>
+          </div>
+          <h3 className="project-empty-title">No projects yet</h3>
+          <p className="project-empty-desc">Create your first project to start organizing tasks.</p>
+          <button className="project-empty-btn" onClick={() => setQuickAddOpen(true)}>
+            <PlusIcon size={14} />
+            Create Project
+          </button>
+        </div>
+      ) : viewMode === 'list' ? (
       <section className="list-group">
         <table className="lg-table">
           <colgroup>
@@ -277,56 +345,66 @@ export function ProjectsListView({ projects, onRefresh, onOpen, userName }: Proj
       </section>
       ) : (
         /* Board View */
-        <div className="columns-container projects-board">
-          <div className="column projects-col">
-            <div className="column-header">
-              <div className="column-title-group">
-                <span className="column-title">All Projects</span>
-                <span className="column-count">{sorted.length}</span>
-              </div>
-            </div>
-            <div className="column-tasks">
-              {sorted.map((project) => (
+        <div className="projects-board">
+          <div className="projects-board-grid">
+            {sorted.map((project) => {
+              const due = formatDueDate(project.due_date);
+              const dueState = dueStatus(project.due_date);
+              const taskCount = project.task_count || 0;
+              const progress = taskCount > 0 ? Math.min(100, Math.round((taskCount / Math.max(taskCount + 2, 5)) * 100)) : 0;
+              return (
                 <div
                   key={project.id}
-                  className="project-card"
+                  className="project-board-card"
                   onClick={() => onOpen(project)}
                 >
-                  <div className="project-card-header">
-                    <span className="project-card-icon">
+                  <div className="pbc-header">
+                    <span className="pbc-icon">
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" /></svg>
                     </span>
-                    <span className="project-card-title">{project.title}</span>
+                    <div className="pbc-header-text">
+                      <h4 className="pbc-title">{project.title}</h4>
+                      {project.lead && (
+                        <span className="pbc-lead-badge">
+                          <span className="pbc-lead-avatar" style={{ background: assigneeColor(project.lead) }}>
+                            {initials(project.lead)}
+                          </span>
+                          {project.lead}
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  <div className="project-card-meta">
-                    <span className={`prio prio-${project.priority.toLowerCase()}`}>
-                      {project.priority === 'High' ? '↗' : project.priority === 'Medium' ? '→' : '↘'} {project.priority}
-                    </span>
-                    {project.lead && (
-                      <span className="member-avatar" style={{ background: assigneeColor(project.lead) }}>
-                        {initials(project.lead)}
+
+                  <div className="pbc-progress-section">
+                    <div className="pbc-progress-bar">
+                      <div className="pbc-progress-fill" style={{ width: `${progress}%` }} />
+                    </div>
+                    <span className="pbc-progress-text">{taskCount} tasks</span>
+                  </div>
+
+                  <div className="pbc-bottom">
+                    <div className={`pbc-priority pbc-priority-${project.priority.toLowerCase()}`}>
+                      <span className="pbc-prio-glyph">
+                        {project.priority === 'High' ? '↗' : project.priority === 'Medium' ? '→' : '↘'}
                       </span>
-                    )}
-                    {project.due_date && (
-                      <span className="project-card-due">
-                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
-                        {formatDueDate(project.due_date)}
-                      </span>
-                    )}
-                    {project.task_count !== undefined && (
-                      <span className="project-card-tasks">
-                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 11 12 14 22 4" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" /></svg>
-                        {project.task_count} tasks
+                      {project.priority}
+                    </div>
+
+                    {due && (
+                      <span className={`task-due due-${dueState}`}>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
+                        {due}
                       </span>
                     )}
                   </div>
                 </div>
-              ))}
-              <button className="column-add" onClick={() => setQuickAddOpen(true)}>
-                <PlusIcon size={13} />
-                <span>Add Project</span>
-              </button>
-            </div>
+              );
+            })}
+
+            <button className="project-board-add" onClick={() => setQuickAddOpen(true)}>
+              <PlusIcon size={16} />
+              <span>Add Project</span>
+            </button>
           </div>
         </div>
       )}

@@ -6,7 +6,14 @@ import './App.css';
 
 function App() {
   const [user, setUser] = useState<string | null>(() => {
-    return localStorage.getItem('taskflow_user');
+    const stored = localStorage.getItem('taskflow_user');
+    if (!stored) return null;
+    try {
+      const parsed = JSON.parse(stored);
+      return typeof parsed === 'object' && parsed !== null ? parsed.name : stored;
+    } catch {
+      return stored;
+    }
   });
 
   const handleLogin = (name: string) => {
