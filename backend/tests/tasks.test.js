@@ -52,6 +52,26 @@ describe('Task API', () => {
       expect(res.body.user.password).toBeUndefined();
     });
 
+    it('should create a default board for a new user', async () => {
+      const email = 'board@example.com';
+      getDb().prepare('DELETE FROM users WHERE email = ?').run(email);
+      const res = await request(app)
+        .post('/api/auth/register')
+        .send({
+          name: 'Board Test',
+          email,
+          password: 'password123'
+        });
+
+      expect(res.status).toBe(201);
+      const createdBoard = getDb()
+        .prepare('SELECT * FROM boards WHERE user_id = ? ORDER BY id LIMIT 1')
+        .get(res.body.user.id);
+
+      expect(createdBoard).toBeTruthy();
+      expect(createdBoard.name).toBe('Task Board');
+    });
+
     it('should reject registration with existing email', async () => {
       const res = await request(app)
         .post('/api/auth/register')
@@ -347,6 +367,17 @@ describe('Task API', () => {
 
       expect(res.status).toBe(400);
       expect(res.body.error).toBe('Invalid board ID');
+    });
+  });
+
+  describe('GET /api/boards', () => {
+    it('should list available boards', async () => {
+      const res = await request(app)
+        .get('/api/boards');
+
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body)).toBe(true);
+      expect(res.body.length).toBeGreaterThan(0);
     });
   });
 

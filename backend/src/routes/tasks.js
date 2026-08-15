@@ -13,6 +13,18 @@ const sanitizeString = (str) => {
   return str.trim();
 };
 
+// GET /api/boards - Get all boards
+router.get('/boards', (req, res) => {
+  try {
+    const db = getDb();
+    const boards = db.prepare('SELECT * FROM boards ORDER BY id ASC').all();
+    res.json(boards);
+  } catch (error) {
+    console.error('Error fetching boards:', error);
+    res.status(500).json({ error: 'Failed to fetch boards' });
+  }
+});
+
 // GET /api/boards/:id - Get board with columns
 router.get('/boards/:id', (req, res) => {
   try {

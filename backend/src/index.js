@@ -18,6 +18,12 @@ console.log('CORS_ORIGIN env:', process.env.CORS_ORIGIN);
 console.log('Using origin:', origin === '*' ? 'ALL origins (default)' : 'Specific origin');
 console.log('--- End CORS Configuration ---');
 
+app.use((req, res, next) => {
+  const timestamp = new Date().toISOString();
+  console.log(`[${timestamp}] ${req.method} ${req.originalUrl}`);
+  next();
+});
+
 app.use(cors({
   origin,
   credentials: true
@@ -51,7 +57,8 @@ if (process.env.NODE_ENV === 'production') {
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.error(err.stack);
+  console.error(`[${new Date().toISOString()}] ERROR ${req.method} ${req.originalUrl}`);
+  console.error(err.stack || err.message || err);
   res.status(500).json({ error: 'Something went wrong!' });
 });
 
@@ -59,7 +66,7 @@ app.use((err, req, res, next) => {
 if (process.env.NODE_ENV !== 'test') {
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
-    console.log(`Environment: ${process.env.NODE_ENV}`);
+    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
     console.log(`CORS Origin: ${process.env.CORS_ORIGIN || '*'}`);
   });
 }

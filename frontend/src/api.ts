@@ -1,6 +1,24 @@
 import { Board, Task, CreateTaskInput, UpdateTaskInput, ColumnStats, AuthUser, Project, CreateProjectInput, UpdateProjectInput, ProjectTask, CreateProjectTaskInput, UpdateProjectTaskInput } from './types';
 
-const API_BASE = 'https://taskflow-kanban-trcl.onrender.com/api';
+function getApiBase(): string {
+  if (typeof window === 'undefined') {
+    return 'http://localhost:3001/api';
+  }
+
+  const stored = localStorage.getItem('taskflow_api_base');
+  if (stored && stored.trim()) {
+    return stored.trim().replace(/\/$/, '');
+  }
+
+  const hostname = window.location.hostname;
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    return 'http://localhost:3001/api';
+  }
+
+  return 'https://taskflow-kanban-trcl.onrender.com/api';
+}
+
+const API_BASE = getApiBase();
 
 export function getToken() {
   return localStorage.getItem('taskflow_token');
@@ -101,6 +119,9 @@ export const api = {
     fetchJson<{ user: AuthUser }>(`${API_BASE}/auth/me`),
 
   // Board
+  getBoards: () =>
+    fetchJson<Board[]>(`${API_BASE}/boards`),
+
   getBoard: (id: number) =>
     fetchJson<Board>(`${API_BASE}/boards/${id}`),
 

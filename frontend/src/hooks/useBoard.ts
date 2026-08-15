@@ -2,7 +2,19 @@ import { useState, useEffect, useCallback } from 'react';
 import { api } from '../api';
 import { Board, Task, ColumnStats } from '../types';
 
-const BOARD_ID = 1; // Default board
+const DEFAULT_BOARD_ID = 1;
+
+const getPreferredBoardId = async (): Promise<number> => {
+  try {
+    const boards = await api.getBoards();
+    if (boards.length > 0) {
+      return boards[0].id;
+    }
+  } catch (error) {
+    console.warn('Falling back to default board ID because board list lookup failed:', error);
+  }
+  return DEFAULT_BOARD_ID;
+};
 
 export function useBoard() {
   const [board, setBoard] = useState<Board | null>(null);
@@ -12,7 +24,8 @@ export function useBoard() {
   const fetchBoard = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await api.getBoard(BOARD_ID);
+      const boardId = await getPreferredBoardId();
+      const data = await api.getBoard(boardId);
       setBoard(data);
       setError(null);
     } catch (err) {
@@ -37,7 +50,8 @@ export function useTasks(priority?: string) {
   const fetchTasks = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await api.getTasks(BOARD_ID, priority);
+      const boardId = await getPreferredBoardId();
+      const data = await api.getTasks(boardId, priority);
       setTasks(data);
       setError(null);
     } catch (err) {
@@ -61,7 +75,8 @@ export function useBoardStats() {
   const fetchStats = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await api.getBoardStats(BOARD_ID);
+      const boardId = await getPreferredBoardId();
+      const data = await api.getBoardStats(boardId);
       setStats(data);
     } catch (err) {
       console.error('Failed to load stats:', err);

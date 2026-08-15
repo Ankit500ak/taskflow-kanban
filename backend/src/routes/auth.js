@@ -8,6 +8,13 @@ const sanitizeString = (str) => (typeof str === 'string' ? str.trim() : '');
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MAX_NAME_LENGTH = 100;
 
+const ensureDefaultBoardForUser = (db, userId) => {
+  const existingBoard = db.prepare('SELECT id FROM boards WHERE user_id = ? ORDER BY id LIMIT 1').get(userId);
+  if (!existingBoard) {
+    db.prepare('INSERT INTO boards (name, user_id) VALUES (?, ?)').run('Task Board', userId);
+  }
+};
+
 // POST /api/auth/register - Create a new user
 router.post('/register', (req, res) => {
   try {
@@ -45,6 +52,8 @@ router.post('/register', (req, res) => {
     ).run(cleanName, cleanEmail, hashedPassword);
 
     const user = db.prepare('SELECT id, name, email, created_at FROM users WHERE id = ?').get(result.lastInsertRowid);
+    ensureDefaultBoardForUser(db, user.id);
+
     const token = signToken(user);
 
     res.status(201).json({ token, user });
@@ -75,6 +84,8 @@ router.post('/login', (req, res) => {
     if (!valid) {
       return res.status(401).json({ error: 'Invalid email or password' });
     }
+
+    ensureDefaultBoardForUser(db, user.id);
 
     const safeUser = {
       id: user.id,
@@ -130,6 +141,8 @@ router.post('/guest', (req, res) => {
       ).run('Guest', guestEmail, hashedPassword);
       user = db.prepare('SELECT id, name, email, created_at FROM users WHERE id = ?').get(result.lastInsertRowid);
     }
+
+    ensureDefaultBoardForUser(db, user.id);
 
     const token = signToken(user);
     res.json({ token, user });
