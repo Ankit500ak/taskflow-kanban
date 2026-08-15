@@ -21,20 +21,39 @@ function getDb() {
   return db;
 }
 
+function ensureDefaultColumnsForBoard(database, boardId) {
+  const existingColumns = database.prepare('SELECT id FROM columns WHERE board_id = ? ORDER BY position').all(boardId);
+  if (existingColumns.length > 0) {
+    return;
+  }
+
+  ['To Do', 'Doing', 'Completed', 'On Hold'].forEach((name, index) => {
+    database.prepare('INSERT INTO columns (board_id, name, position) VALUES (?, ?, ?)').run(boardId, name, index);
+  });
+}
+
 function ensureDefaultUserAndBoard(database) {
   const existing = database.prepare('SELECT id FROM users WHERE email = ?').get('default@example.com');
 
   if (existing) {
     const board = database.prepare('SELECT id FROM boards WHERE user_id = ? LIMIT 1').get(existing.id);
     if (!board) {
-      database.prepare('INSERT INTO boards (name, user_id) VALUES (?, ?)').run('Task Board', existing.id);
+      const result = database.prepare('INSERT INTO boards (name, user_id) VALUES (?, ?)').run('Task Board', existing.id);
+      ensureDefaultColumnsForBoard(database, result.lastInsertRowid);
+      return;
+    }
+
+    const boardColumns = database.prepare('SELECT id FROM columns WHERE board_id = ?').all(board.id);
+    if (boardColumns.length === 0) {
+      ensureDefaultColumnsForBoard(database, board.id);
     }
     return;
   }
 
   const result = database.prepare("INSERT INTO users (name, email, password) VALUES (?, ?, ?)")
     .run('Default User', 'default@example.com', 'reset-required');
-  database.prepare('INSERT INTO boards (name, user_id) VALUES (?, ?)').run('Task Board', result.lastInsertRowid);
+  const boardResult = database.prepare('INSERT INTO boards (name, user_id) VALUES (?, ?)').run('Task Board', result.lastInsertRowid);
+  ensureDefaultColumnsForBoard(database, boardResult.lastInsertRowid);
 }
 
 function initializeDb() {
@@ -63,9 +82,15 @@ function initializeDb() {
         ensureDefaultUserAndBoard(database);
       } else {
         for (const user of users) {
-          const board = database.prepare('SELECT id FROM boards WHERE user_id = ? LIMIT 1').get(user.id);
+          const board = database.prepare('SELECT id FROM boards WHERE user_id = ? ORDER BY id LIMIT 1').get(user.id);
           if (!board) {
-            database.prepare('INSERT INTO boards (name, user_id) VALUES (?, ?)').run('Task Board', user.id);
+            const result = database.prepare('INSERT INTO boards (name, user_id) VALUES (?, ?)').run('Task Board', user.id);
+            ensureDefaultColumnsForBoard(database, result.lastInsertRowid);
+          } else {
+            const boardColumns = database.prepare('SELECT id FROM columns WHERE board_id = ?').all(board.id);
+            if (boardColumns.length === 0) {
+              ensureDefaultColumnsForBoard(database, board.id);
+            }
           }
         }
       }

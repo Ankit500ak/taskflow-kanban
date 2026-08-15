@@ -68,10 +68,22 @@ export function QuickAdd({ column, columns, onClose, onSubmit }: QuickAddProps) 
       titleRef.current?.focus();
       return;
     }
+
+    if (!columns.length) {
+      setError('No columns available for this board');
+      return;
+    }
+
+    const resolvedColumnId = Number(columnId) || columns[0]?.id;
+    if (!resolvedColumnId) {
+      setError('Column ID is required');
+      return;
+    }
+
     setSaving(true);
     setError('');
     await onSubmit({
-      column_id: columnId,
+      column_id: resolvedColumnId,
       title: title.trim(),
       description: description.trim() || undefined,
       priority,

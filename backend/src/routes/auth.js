@@ -8,10 +8,29 @@ const sanitizeString = (str) => (typeof str === 'string' ? str.trim() : '');
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MAX_NAME_LENGTH = 100;
 
+const ensureDefaultColumnsForBoard = (db, boardId) => {
+  const existingColumns = db.prepare('SELECT id FROM columns WHERE board_id = ? ORDER BY position').all(boardId);
+  if (existingColumns.length > 0) {
+    return;
+  }
+
+  const defaultColumns = ['To Do', 'Doing', 'Completed', 'On Hold'];
+  defaultColumns.forEach((name, index) => {
+    db.prepare('INSERT INTO columns (board_id, name, position) VALUES (?, ?, ?)').run(boardId, name, index);
+  });
+};
+
 const ensureDefaultBoardForUser = (db, userId) => {
   const existingBoard = db.prepare('SELECT id FROM boards WHERE user_id = ? ORDER BY id LIMIT 1').get(userId);
   if (!existingBoard) {
-    db.prepare('INSERT INTO boards (name, user_id) VALUES (?, ?)').run('Task Board', userId);
+    const result = db.prepare('INSERT INTO boards (name, user_id) VALUES (?, ?)').run('Task Board', userId);
+    ensureDefaultColumnsForBoard(db, result.lastInsertRowid);
+    return;
+  }
+
+  const existingColumns = db.prepare('SELECT id FROM columns WHERE board_id = ?').all(existingBoard.id);
+  if (existingColumns.length === 0) {
+    ensureDefaultColumnsForBoard(db, existingBoard.id);
   }
 };
 

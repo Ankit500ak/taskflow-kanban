@@ -72,6 +72,29 @@ describe('Task API', () => {
       expect(createdBoard.name).toBe('Task Board');
     });
 
+    it('should create default columns for a new board', async () => {
+      const email = 'board-columns@example.com';
+      getDb().prepare('DELETE FROM users WHERE email = ?').run(email);
+      const res = await request(app)
+        .post('/api/auth/register')
+        .send({
+          name: 'Board Columns Test',
+          email,
+          password: 'password123'
+        });
+
+      expect(res.status).toBe(201);
+      const board = getDb()
+        .prepare('SELECT * FROM boards WHERE user_id = ? ORDER BY id LIMIT 1')
+        .get(res.body.user.id);
+      const columns = getDb()
+        .prepare('SELECT name, position FROM columns WHERE board_id = ? ORDER BY position')
+        .all(board.id);
+
+      expect(board).toBeTruthy();
+      expect(columns.map((column) => column.name)).toEqual(['To Do', 'Doing', 'Completed', 'On Hold']);
+    });
+
     it('should reject registration with existing email', async () => {
       const res = await request(app)
         .post('/api/auth/register')
