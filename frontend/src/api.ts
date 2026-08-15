@@ -1,24 +1,8 @@
 import { Board, Task, CreateTaskInput, UpdateTaskInput, ColumnStats, AuthUser, Project, CreateProjectInput, UpdateProjectInput, ProjectTask, CreateProjectTaskInput, UpdateProjectTaskInput } from './types';
 
-function getApiBase(): string {
-  if (typeof window === 'undefined') {
-    return 'http://localhost:3001/api';
-  }
-
-  const stored = localStorage.getItem('taskflow_api_base');
-  if (stored && stored.trim()) {
-    return stored.trim().replace(/\/$/, '');
-  }
-
-  const hostname = window.location.hostname;
-  if (hostname === 'localhost' || hostname === '127.0.0.1') {
-    return 'http://localhost:3001/api';
-  }
-
-  return 'https://taskflow-kanban-trcl.onrender.com/api';
-}
-
-const API_BASE = getApiBase();
+const API_BASE = (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'))
+  ? 'http://localhost:3001/api'
+  : 'https://taskflow-kanban-trcl.onrender.com/api';
 
 export function getToken() {
   return localStorage.getItem('taskflow_token');
