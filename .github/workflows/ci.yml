@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+
 jobs:
   test:
     name: Run Tests
@@ -28,7 +31,7 @@ jobs:
         run: npm test
 
   build:
-    name: Build Frontend
+    name: Build & Deploy
     needs: test
     runs-on: ubuntu-latest
     steps:
@@ -47,3 +50,22 @@ jobs:
       - name: Frontend Build
         working-directory: ./frontend
         run: npm run build
+
+      - name: Deploy to Vercel
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        working-directory: ./frontend
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          if [ -z "$VERCEL_TOKEN" ] || [ -z "$VERCEL_ORG_ID" ] || [ -z "$VERCEL_PROJECT_ID" ]; then
+            echo "Skipping Vercel deploy: required Vercel secrets are not configured."
+            exit 0
+          fi
+          npx vercel --prod --token "$VERCEL_TOKEN"
+
+      - name: Deploy to Render
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        working-directory: ./backend
+        run: echo "Render auto-deploys on git push"
