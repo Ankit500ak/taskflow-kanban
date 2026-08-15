@@ -21,6 +21,22 @@ function getDb() {
   return db;
 }
 
+function ensureDefaultUserAndBoard(database) {
+  const existing = database.prepare('SELECT id FROM users WHERE email = ?').get('default@example.com');
+
+  if (existing) {
+    const board = database.prepare('SELECT id FROM boards WHERE user_id = ? LIMIT 1').get(existing.id);
+    if (!board) {
+      database.prepare('INSERT INTO boards (name, user_id) VALUES (?, ?)').run('Task Board', existing.id);
+    }
+    return;
+  }
+
+  const result = database.prepare("INSERT INTO users (name, email, password) VALUES (?, ?, ?)")
+    .run('Default User', 'default@example.com', 'reset-required');
+  database.prepare('INSERT INTO boards (name, user_id) VALUES (?, ?)').run('Task Board', result.lastInsertRowid);
+}
+
 function initializeDb() {
   try {
     const database = getDb();
@@ -39,16 +55,23 @@ function initializeDb() {
     try { database.exec("ALTER TABLE tasks ADD COLUMN status TEXT CHECK (status IN ('To Do', 'Doing', 'Completed', 'On Hold')) DEFAULT 'To Do'"); } catch (_) { /* already exists */ }
     try { database.exec("ALTER TABLE tasks ADD COLUMN collaborators TEXT"); } catch (_) { /* already exists */ }
     try { database.exec("ALTER TABLE tasks ADD COLUMN reporter TEXT"); } catch (_) { /* already exists */ }
-    // Ensure default user exists (needed for boards foreign key)
-    try {
-      const user = database.prepare('SELECT * FROM users WHERE id = 1').get();
-      if (!user) {
-        database.exec("INSERT INTO users (name, email) VALUES ('Default User', 'default@example.com')");
-      }
-    } catch (_) { /* already exists */ }
 
-    // Ensure default board exists
-    try { database.exec("INSERT OR IGNORE INTO boards (id, name, user_id) VALUES (1, 'Task Board', 1)"); } catch (_) { /* already exists */ }
+    // Fix stale or empty databases automatically when the app starts.
+    try {
+      const users = database.prepare('SELECT id, name, email FROM users ORDER BY id').all();
+      if (users.length === 0) {
+        ensureDefaultUserAndBoard(database);
+      } else {
+        for (const user of users) {
+          const board = database.prepare('SELECT id FROM boards WHERE user_id = ? LIMIT 1').get(user.id);
+          if (!board) {
+            database.prepare('INSERT INTO boards (name, user_id) VALUES (?, ?)').run('Task Board', user.id);
+          }
+        }
+      }
+    } catch (error) {
+      console.warn('Automatic board repair failed:', error.message || error);
+    }
 
     console.log('Database initialized successfully');
     return database;
