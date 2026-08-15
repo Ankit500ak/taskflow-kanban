@@ -39,6 +39,16 @@ function initializeDb() {
     try { database.exec("ALTER TABLE tasks ADD COLUMN status TEXT CHECK (status IN ('To Do', 'Doing', 'Completed', 'On Hold')) DEFAULT 'To Do'"); } catch (_) { /* already exists */ }
     try { database.exec("ALTER TABLE tasks ADD COLUMN collaborators TEXT"); } catch (_) { /* already exists */ }
     try { database.exec("ALTER TABLE tasks ADD COLUMN reporter TEXT"); } catch (_) { /* already exists */ }
+    // Ensure default user exists (needed for boards foreign key)
+    try {
+      const user = database.prepare('SELECT * FROM users WHERE id = 1').get();
+      if (!user) {
+        database.exec("INSERT INTO users (name, email) VALUES ('Default User', 'default@example.com')");
+      }
+    } catch (_) { /* already exists */ }
+
+    // Ensure default board exists
+    try { database.exec("INSERT OR IGNORE INTO boards (id, name, user_id) VALUES (1, 'Task Board', 1)"); } catch (_) { /* already exists */ }
 
     console.log('Database initialized successfully');
     return database;

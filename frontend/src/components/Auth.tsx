@@ -73,8 +73,8 @@ export function Auth({ onLogin }: AuthProps) {
     }
   };
 
-  return (
-    <div className="auth-page">
+return (
+    <div className="auth-page" style={{ background: '#fafafa', minHeight: '100vh' }}>
       <div className="auth-left">
         <div className="auth-brand">
           <div className="auth-logo">
@@ -189,8 +189,6 @@ export function Auth({ onLogin }: AuthProps) {
           <a href="#" className="auth-link">Privacy Policy</a>.
         </p>
       </div>
-
-
     </div>
   );
 }

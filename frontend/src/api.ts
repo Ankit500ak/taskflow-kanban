@@ -1,6 +1,6 @@
 import { Board, Task, CreateTaskInput, UpdateTaskInput, ColumnStats, AuthUser, Project, CreateProjectInput, UpdateProjectInput, ProjectTask, CreateProjectTaskInput, UpdateProjectTaskInput } from './types';
 
-const API_BASE = 'http://localhost:3001/api';
+const API_BASE = 'https://taskflow-kanban-trcl.onrender.com/api';
 
 export function getToken() {
   return localStorage.getItem('taskflow_token');
@@ -16,21 +16,66 @@ export function clearToken() {
 
 async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
   const token = getToken();
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...options?.headers,
-    },
-  });
-
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'Network error' }));
-    throw new Error(error.error || `HTTP error ${response.status}`);
+  
+  // Check if url is already a full URL or just a path
+  const isFullUrl = url.startsWith('http://') || url.startsWith('https://');
+  const fullUrl = isFullUrl ? url : API_BASE + url;
+  
+  // Debug: Log the full URL being fetched
+  if (typeof window !== 'undefined') {
+    console.log('API Request:', fullUrl);
+    console.log('Auth token present:', !!token);
   }
 
-  return response.json();
+  try {
+    const response = await fetch(fullUrl, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...options?.headers,
+      },
+    });
+
+    // Detailed error reporting
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => 'Unable to read response');
+      let errorMsg;
+      switch (response.status) {
+        case 0:
+          errorMsg = 'NETWORK_ERROR: Unable to connect to server. Check if backend is running and CORS is configured. Full URL: ' + fullUrl;
+          break;
+        case 400:
+          errorMsg = 'BAD_REQUEST: Invalid request data. Check form inputs.';
+          break;
+        case 401:
+          errorMsg = 'UNAUTHORIZED: Invalid credentials or expired token.';
+          break;
+        case 409:
+          errorMsg = 'CONFLICT: Account with this email already exists.';
+          break;
+        case 500:
+          errorMsg = 'SERVER_ERROR: Something went wrong on the backend.';
+          break;
+        default:
+          errorMsg = 'HTTP ' + response.status + ' ' + (response.statusText || '');
+      }
+      throw new Error(errorMsg + ' | Response: ' + errorText.substring(0, 150));
+    }
+
+    // Log successful response
+    if (typeof window !== 'undefined') {
+      console.log('API Success:', fullUrl);
+    }
+    return response.json();
+  } catch (error: any) {
+    // Comprehensive error handling
+    if (typeof window !== 'undefined') {
+      console.error('API Fetch Error:', error.message);
+      console.error('Full URL:', isFullUrl ? url : API_BASE + url);
+    }
+    throw error;
+  }
 }
 
 export const api = {
